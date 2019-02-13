@@ -1,0 +1,2 @@
+client.ts = connecting to server, etc
+battle.ts = implements state.Battle, etc.

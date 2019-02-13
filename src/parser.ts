@@ -97,8 +97,8 @@ export class Parser {
     return Parser.upgradeArgs({args, kwArgs});
   }
 
-  static effectId(effect?: string): ID {
-    if (!effect) return '' as ID;
+  static effect(effect?: string): string {
+    if (!effect) return '';
 
     if (effect.startsWith('item:') || effect.startsWith('move:')) {
       effect = effect.slice(5);
@@ -106,7 +106,7 @@ export class Parser {
       effect = effect.slice(8);
     }
 
-    return toID(effect);
+    return effect.trim();
   }
 
   private static upgradeArgs({args, kwArgs}: {args: Args, kwArgs: KWArgs}):
@@ -119,7 +119,7 @@ export class Parser {
 
         const [, pokemon, effect, arg3, arg4] = args;
         const target = kwArgs.of;
-        const id = Parser.effectId(effect);
+        const id = toID(Parser.effect(effect));
 
         if (kwArgs.block) return {args: ['-fail', pokemon], kwArgs};
 
