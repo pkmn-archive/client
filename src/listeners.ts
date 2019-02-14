@@ -1,11 +1,11 @@
 import {Params} from './parser';
 
-export type Listener = (params: Params) => void;
+export type Listener = (params: Params) => boolean|void;
 
 export class Listeners {
   readonly listeners: {[cmd: string]: Listener[]} = {};
 
-  relay(params: Params) {
+  send(params: Params) {
     const cmd = params.args[0];
 
     const listeners = this.listeners[cmd];
@@ -16,7 +16,7 @@ export class Listeners {
     }
   }
 
-  subscribe(cmd: string, listener: Listener) {
+  on(cmd: string, listener: Listener) {
     let listeners = this.listeners[cmd];
     if (!listeners) {
       listeners = (this.listeners[cmd] = []);
@@ -25,7 +25,7 @@ export class Listeners {
     listeners.push(listener);
   }
 
-  unsubscribe(cmd: string, listener: Listener): boolean {
+  off(cmd: string, listener: Listener): boolean {
     const listeners = this.listeners[cmd];
     if (!listeners) return false;
 
