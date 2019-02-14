@@ -1,6 +1,10 @@
 /* tslint:disable:switch-default */
 import {ID, toID} from '@pkmn.cc/data';
 
+export type Params = {
+  args: Args,
+  kwArgs: KWArgs
+};
 export type Args = [string, ...string[]];
 export type KWArgs = {
   [kw: string]: string
@@ -35,7 +39,7 @@ export class Parser {
   // istanbul ignore next: constructor
   protected constructor() {}
 
-  static parseLine(line: string): {args: Args, kwArgs: KWArgs} {
+  static parseLine(line: string): Params {
     if (!line.startsWith('|')) return {args: ['', line], kwArgs: {}};
     if (line === '|') return {args: ['done'], kwArgs: {}};
 
@@ -94,7 +98,7 @@ export class Parser {
       args.pop();
     }
 
-    return Parser.upgradeArgs({args, kwArgs});
+    return Parser.upgradeParams({args, kwArgs});
   }
 
   static effect(effect?: string): string {
@@ -109,8 +113,7 @@ export class Parser {
     return effect.trim();
   }
 
-  private static upgradeArgs({args, kwArgs}: {args: Args, kwArgs: KWArgs}):
-      {args: Args, kwArgs: KWArgs} {
+  private static upgradeParams({args, kwArgs}: Params): Params {
     switch (args[0]) {
       case '-activate': {
         if (kwArgs.item || kwArgs.move || kwArgs.number || kwArgs.ability) {
