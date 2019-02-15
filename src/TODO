@@ -1,0 +1,2 @@
+Move connection related out of client?
+Instead, need a READ stream (actual client code can manage WRITE stream?)
