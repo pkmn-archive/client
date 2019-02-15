@@ -1,25 +1,30 @@
 import * as https from 'https';
 import * as WebSocket from 'ws';
 
+import {Battles} from './battle';
 import {Listeners} from './listeners';
 import {Params, Parser} from './parser';
+import {ID, toID} from '@pkmn.cc/data';
 
 export class Client {
-  readonly ws: WebSocket;
-  readonly listeners: Listeners;
+  protected readonly listeners: Listeners;
+  protected readonly battles: Battles;
 
-  readonly url: {host: string, path: string};
-  readonly name: string;
+  private readonly ws: WebSocket;
+  private readonly url: {host: string, path: string};
+  private readonly name: string;
 
   constructor(
-      server: string, port = 8000, name?: string, readonly password?: string,
-      readonly room: string = 'lobby', host = 'play.pokemonshowdown.com') {
+      server: string, port = 8000, name?: string, private readonly password?: string,
+      private readonly room: string = 'lobby', host = 'play.pokemonshowdown.com') {
     this.name = name || `BOT-${Math.random().toString(36).substring(2)}`;
     this.url = {host, path: `/~~${server}:${port}/action.php`};
 
     this.listeners = new Listeners();
     this.listeners.on('challstr', p => this.onChallstr(p));
     this.listeners.on('updateuser', p => this.onUpdateUser(p));
+
+    this.battles = new Battles();
 
     this.ws = new WebSocket(`ws://${server}:${port}/showdown/websocket`);
     this.ws.on('open', () => {});
@@ -28,21 +33,26 @@ export class Client {
   }
 
   destroy() {
+    // BUG: Do we care about actually unsubscribing listeners?
     this.ws.close();
+  }
+
+  send(msg: string) {
+    this.ws.send(msg);
   }
 
   private onMessage(msg: string) {
     const lines = msg.split('\n');
-    const id = (lines[0].charAt(0) === '>') ? lines[0].slice(1) : undefined;
+    const id: ID|undefined =
+      (lines[0].charAt(0) === '>') ? toID(lines[0].slice(1)) : undefined;
 
     for (const line of lines) {
       const params = Parser.parseLine(line);
       if (!params.args[0]) continue;
       if (id) {
-        // TODO
-      } else {
-        this.listeners.send(params);
+        this.battles.send(id, params);
       }
+      this.listeners.send(params);
     }
   }
 
@@ -97,7 +107,6 @@ export class Client {
           return;
         }
 
-        // GET: the response (chunks) is the assertion
         let assertion = chunks;
         try {  // POST: returns JSON containing the assertion
           const json = JSON.parse(chunks.substr(1));
@@ -108,8 +117,9 @@ export class Client {
             return;
           }
         } catch (err) {
-        }  // GET
-        this.ws.send('|/trn ' + this.name + ',0,' + assertion);
+          // GET: the response (chunks) is the assertion
+        }
+        this.send('|/trn ' + this.name + ',0,' + assertion);
       });
     });
 
@@ -122,7 +132,7 @@ export class Client {
   private onUpdateUser(params: Params) {
     const [, name, status] = params.args;
     if (status !== '1' || name !== this.name) return false;
-    this.ws.send('|/join ' + this.room);
+    this.send('|/join ' + this.room);
     return true;
   }
 }

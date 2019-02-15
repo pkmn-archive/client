@@ -3,7 +3,7 @@ import {Params} from './parser';
 export type Listener = (params: Params) => boolean|void;
 
 export class Listeners {
-  readonly listeners: {[cmd: string]: Listener[]} = {};
+  private readonly listeners: {[cmd: string]: Listener[]} = {};
 
   send(params: Params) {
     const cmd = params.args[0];
