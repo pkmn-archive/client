@@ -12,15 +12,34 @@ type BattleDetails Partial<{
   format: Format;
 }>;
 
-export class Battle: state.Battle {
+// Client state comes from a perspectives. Perspective matters for which things
+// are knowable and to what degree of accuracy (eg. HP).
+// TODO: observed battle can be 'observed' (no inference) or 'perceived' (with
+// inference, can include information about team inferred from replays or OMNI)
+export type Perspective = 'player' | 'observer';
 
+export namespace Client {
+  export Battle {
+}
+
+
+// 1) BATTLE IS ALWAYS FROM P1's PERSPECTIVE! (ie/ lastObservedDamage etc)
+//  -> therefore, each
+// 2) We may know the teams for P1 or P1&P2 (omni) or neither (replay)
+
+// TODO make use always P1 in the local/remote case? Alternative, need a way to
+// determine 'my' side.
+export class Battle {
+
+  // This is always 'observed' or 'inferred', regardless of the perspective
+  // (though will be more accurate from the 'player' perspective)
   protected lastObservedDamage: number|undefined = undefined;
 
   protected readonly listeners = {[cmd: string]: Listener}
 
-  constructor(id: ID, format: Format, gameType: state.GameType, p1: PlayerDetails, p2: PlayerDetails) {
+  // TODO game type should be implied by format!
+  constructor(id: ID, format: Format, p1: PlayerDetails, p2: PlayerDetails) {
     this.format = format;
-    this.gameType = gameType;
 
     let initialState: 'team'|'move' = p1.pokes.length > 0 ? 'team' : 'move';
     this.state = initialState;
@@ -37,13 +56,13 @@ export class Battle: state.Battle {
     return lastObservedDamage;
   }
 
-  toJSON() {
+  toBattle(): state.Battle {
     return JSON.stringify({
       format: this.format,
       gameType: this.gameType,
-      field: this.field.toJSON(),
-      p1: this.p1.toJSON(),
-      p2: this.p2.toJSON(),
+      field: this.field.toField(),
+      p1: this.p1.toSide(),
+      p2: this.p2.toSide(),
       state: this.state,
       turn: this.turn,
       abilityOrder: this.abilityOrder,
@@ -72,13 +91,19 @@ export class Battles {
   private readonly battles: {[id: string]: Battle};
   private readonly details: {[id: string]: BattleDetails};
 
+  name?: string; // TODO compare to determine if we're player 1 or 2?
+  team?: Team; // current set team TODO compare to details
+
   send(id: ID, params: Params) {
     const cmd = params.args[0];
 
     let battle = battles[id];
     if (!battle) {
       let details = details[id];
-      if (!details) details = (details[id] = {pokes: []});
+      if (!details) {
+        details = (details[id] = {pokes: []});
+        if (team)
+      }
 
       switch (cmd) {
         case 'player':
@@ -113,8 +138,7 @@ export class Battles {
         case 'start':
           battle = (battles[id] = Battle.create(id, details));
           break;
-        default:
-          throw new Error(`Unexpected command '${cmd}'`);
+        default: // ignore
       }
     }
 

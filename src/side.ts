@@ -4,12 +4,12 @@ import {Team} from '@pkmn.cc/data';
 export type PlayerDetails = {
   name: string;
   avatar: string;
-  team?: Team;
+  team?: Team; // TODO could also be PerceivedTeam from replay or OMNI
   pokes: {details: string, item: boolean}[];
   teamsize?: number;
 };
 
-export class Side implements state.Side {
+export class Side {
   readonly pokemon: Pokemon[];
   constructor(battleState: 'team'|'move', player: PlayerDetails) {
     this.state = battleState;
@@ -18,8 +18,8 @@ export class Side implements state.Side {
     this.fainted = {lastTurn: false, thisTurn: false};
   }
 
-  toJSON() {
-    return JSON.stringify({
+  toSide(): state.Side {
+    return {
       state: this.state,
       pokemon: this.pokemon.map(p => p.toJSON()),
       active: this.active,
@@ -27,7 +27,7 @@ export class Side implements state.Side {
       fainted: this.fainted,
       lastMove: this.lastMove,
       zMoveUsed: this.zMoveUsed,
-    });
+    };
   }
 
   private static initializePokemon(player: PlayerDetails) {
