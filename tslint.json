@@ -4,6 +4,7 @@
     "exclude": "**/*.json"
   },
   "rules": {
-    "forin": false
+    "forin": false,
+    "no-conditional-assignment": false
   }
 }
