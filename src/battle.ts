@@ -25,12 +25,10 @@ export class Battle {
   lastDamage: number|undefined;
 
   private constructor(
-      readonly id: ID, readonly stream: Stream, readonly format: Format,
-      readonly perspective: Perspective, p1: Player, p2: Player) {
+      readonly id: ID, readonly format: Format, readonly perspective: Perspective, p1: Player, p2: Player) {
     this.timer = new Timer(this.listeners, toID(p1.name));
 
     this.id = id;
-    this.stream = stream;
     this.format = format;
     this.perspective = perspective;
 
@@ -42,13 +40,11 @@ export class Battle {
     // TODO field/p1/p2/timer
   }
 
-  async start() {
-    let buf;
-    while ((buf = await this.stream.read())) {
-      for (const params of Parser.parse(buf)) {
-        const listener = this.listeners[params.cmd];
-        if (listener) listener.call(null, params);
-      }
+  // TODO need to include COMMANDS (ie/ so that we know team order etc!)?
+  update (buf: string) { 
+    for (const params of Parser.parse(buf)) {
+      const listener = this.listeners[params.cmd];
+      if (listener) listener.call(null, params);
     }
   }
 
@@ -102,7 +98,7 @@ export class Battle {
               }
             }
             // TODO: verify teamsizes match pokes and pokes match provided team?
-            return new Battle(id, s, b.format, perspective, p1, p2);
+            return new Battle(id, b.format, perspective, p1, p2);
           default:  // ignore
         }
       }
